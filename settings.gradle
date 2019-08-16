@@ -1,0 +1,4 @@
+rootProject.name = 'grpcstandalone'
+include 'RiskProto'
+include 'RiskCalc'
+

@@ -1,0 +1,54 @@
+syntax = "proto3";
+//import "google/protobuf/timestamp.proto";
+option java_multiple_files = true;
+option java_package = "io.exp.grpc.risk";
+option java_outer_classname = "RiskProto";
+option objc_class_prefix = "HC";
+
+package RiskService;
+
+// The greeting service definition.
+service RiskService {
+    // Sends a healthCheck
+    rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+
+    rpc calculateRisk(RiskRequest) returns (RiskResponse);
+}
+
+message HealthCheckRequest {
+    string service = 1;
+}
+
+message HealthCheckResponse {
+    enum ServingStatus {
+        UNKNOWN = 0;
+        SERVING = 1;
+        NOT_SERVING = 2;
+    }
+    ServingStatus status = 1;
+}
+
+message RiskRequest{
+    string systemDate = 1;
+    string tradeId = 2 ;
+    string tradeMessage = 3;
+}
+
+message RiskResponse{
+    enum Status {
+        SUCCESS = 0;
+        FAIL = 1;
+    }
+    Status status=1;
+    string time = 2;
+    string tradeId=3;
+    string ccy = 4;
+    double npv = 5;
+    message Tenor{
+        string label=1;
+        double value=2;
+    }
+    repeated Tenor risk = 6;
+}
+
+
