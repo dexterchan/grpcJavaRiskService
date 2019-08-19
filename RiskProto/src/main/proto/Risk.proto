@@ -5,14 +5,14 @@ option java_package = "io.exp.grpc.risk";
 option java_outer_classname = "RiskProto";
 option objc_class_prefix = "HC";
 
-package RiskService;
+package risk;
 
 // The greeting service definition.
 service RiskService {
     // Sends a healthCheck
     rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
 
-    rpc calculateRisk(RiskRequest) returns (RiskResponse);
+    rpc calculate(ValueRequest) returns (ValueResponse);
 }
 
 message HealthCheckRequest {
@@ -28,13 +28,21 @@ message HealthCheckResponse {
     ServingStatus status = 1;
 }
 
-message RiskRequest{
+message ValueRequest{
+    enum TYPE {
+        PV_ONLY = 0;
+        RISK_ONLY = 1;
+        ALL=2;
+    }
+
     string systemDate = 1;
     string tradeId = 2 ;
     string tradeMessage = 3;
+    TYPE valueType=4;
+    repeated string wantedRisk=5;
 }
 
-message RiskResponse{
+message ValueResponse{
     enum Status {
         SUCCESS = 0;
         FAIL = 1;
@@ -42,13 +50,25 @@ message RiskResponse{
     Status status=1;
     string time = 2;
     string tradeId=3;
-    string ccy = 4;
-    double npv = 5;
-    message Tenor{
-        string label=1;
-        double value=2;
+
+
+    message Sensitivity{
+        message Tenor{
+            string label=1;
+            double value=2;
+        }
+        string riskLabel=1;
+        string ccy=2;
+        repeated Tenor tenors=3;
     }
-    repeated Tenor risk = 6;
+    message AssetSensivity{
+        string assetId=1;
+        string ccy = 2;
+        double npv = 3;
+        repeated Sensitivity senseLst=4;
+    }
+
+    repeated AssetSensivity assetSensitivityLst=6;
 }
 
 

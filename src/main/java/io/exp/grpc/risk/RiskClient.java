@@ -56,18 +56,19 @@ public class RiskClient {
         }
     }
 
-    public RiskResponse calculateRisk(String systemdate, String tradeid,String tradeMessage){
+    public ValueResponse calculateRisk(String systemdate, String tradeid,String tradeMessage){
         logger.debug("trying to ping server");
-        RiskRequest.Builder req = RiskRequest.newBuilder();
+        ValueRequest.Builder req = ValueRequest.newBuilder();
         req.setTradeId(tradeid);
         req.setSystemDate(systemdate);
         req.setTradeMessage(tradeMessage);
+        req.setValueType(ValueRequest.TYPE.ALL);
 
-        RiskResponse res=null;
+        ValueResponse res=null;
 
         try{
              res =
-                    blockingStub.calculateRisk(req.build());
+                    blockingStub.calculate(req.build());
             logger.info("Status:"+res.getStatus());
         }catch(StatusRuntimeException e) {
             logger.warn( "RPC failed: {0}", e.getStatus());
@@ -91,17 +92,23 @@ public class RiskClient {
             }
 
 
-            RiskResponse res = client.calculateRisk("2017-03-01","12345","<Trade></Trade>");
+            ValueResponse res = client.calculateRisk("2017-03-01","12345","<Trade></Trade>");
 
             //String jsonString = "";
 //            JsonFormat.parser().ignoringUnknownFields().merge(jsonString,res.toBuilder());
             logger.info(res.getTradeId());
-            for (int i=0;i<res.getRiskCount();i++){
-                RiskResponse.Tenor t=res.getRisk(i);
-                logger.info(t.getLabel()+","+t.getValue());
+            for (ValueResponse.AssetSensivity asset : res.getAssetSensitivityLstList()){
+                logger.info(asset.getAssetId()+":"+asset.getCcy()+":"+asset.getNpv());
+                for (ValueResponse.Sensitivity sens : asset.getSenseLstList()){
+                    logger.info(sens.getCcy()+":"+sens.getRiskLabel());
+                    for(ValueResponse.Sensitivity.Tenor t: sens.getTenorsList()){
+                        logger.info(t.getLabel()+","+t.getValue());
+                    }
+                }
             }
-            String JsonStr=JsonFormat.printer().print(res);
-            logger.info(JsonStr);
+
+            //String JsonStr=JsonFormat.printer().print(res);
+            //logger.info(JsonStr);
 
         } finally {
             client.shutdown();

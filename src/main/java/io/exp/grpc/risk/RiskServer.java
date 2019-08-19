@@ -71,13 +71,11 @@ public class RiskServer {
         }
 
         @Override
-        public void calculateRisk(RiskRequest request, StreamObserver<RiskResponse> responseObserver) {
-            RiskCalcHelperInterface calc = RiskCalcHelperFactory.getRiskCalcHelper();
-
-            RiskResponse res=calc.calculateRisk(request);
+        public void calculate(ValueRequest request, StreamObserver<ValueResponse> responseObserver) {
+            RiskCalcHelperInterface calc =RiskCalcHelperFactory.getRiskCalcHelper();
+            ValueResponse res = calc.calculate(request);
             responseObserver.onNext(res);
             responseObserver.onCompleted();
-
         }
     }
 }

@@ -1,8 +1,9 @@
 package io.exp.riskcalc;
 
-import io.exp.grpc.risk.RiskRequest;
-import io.exp.grpc.risk.RiskResponse;
+
+import io.exp.grpc.risk.ValueRequest;
+import io.exp.grpc.risk.ValueResponse;
 
 public interface RiskCalcHelperInterface {
-     RiskResponse calculateRisk(RiskRequest req);
+     ValueResponse calculate(ValueRequest req);
 }

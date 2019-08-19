@@ -36,14 +36,13 @@ public class RiskServerTest {
     @Test
     public void riskImpl_replyMessage() throws Exception {
 
-        RiskRequest req = RiskRequest.newBuilder().setTradeId("12345").setSystemDate("2017-03-01").setTradeMessage("<Trade></Trade>").build();
+        ValueRequest req = ValueRequest.newBuilder().setTradeId("12345").setSystemDate("2017-03-01").setTradeMessage("<Trade></Trade>").build();
 
-        RiskResponse res =
-                blockingStub.calculateRisk(req);
+        ValueResponse res =
+                blockingStub.calculate(req);
 
         assertEquals(res.getTradeId(),req.getTradeId());
 
-        assertEquals(res.getRiskCount(),10);
     }
 
     @Test
