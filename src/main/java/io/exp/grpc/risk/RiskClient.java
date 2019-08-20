@@ -62,7 +62,8 @@ public class RiskClient {
         req.setTradeId(tradeid);
         req.setSystemDate(systemdate);
         req.setTradeMessage(tradeMessage);
-        req.setValueType(ValueRequest.TYPE.ALL);
+        req.setOutputType(ValueRequest.OUTPUT.ALL);
+        req.setRunType(ValueRequest.RUNTYPE.FO);
 
         ValueResponse res=null;
 

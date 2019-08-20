@@ -29,17 +29,24 @@ message HealthCheckResponse {
 }
 
 message ValueRequest{
-    enum TYPE {
+    enum OUTPUT {
         PV_ONLY = 0;
         RISK_ONLY = 1;
         ALL=2;
+    }
+    enum RUNTYPE {
+        FO = 0;
+        XVA = 1;
+        MR=2;
+        CUSTOM=3;
     }
 
     string systemDate = 1;
     string tradeId = 2 ;
     string tradeMessage = 3;
-    TYPE valueType=4;
-    repeated string wantedRisk=5;
+    OUTPUT outputType=4;
+    RUNTYPE runType=5;
+    repeated string wantedRiskSense=6;
 }
 
 message ValueResponse{
