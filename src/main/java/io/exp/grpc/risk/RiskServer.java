@@ -1,5 +1,7 @@
 package io.exp.grpc.risk;
 
+import com.codahale.metrics.Timer;
+import com.codahale.metrics.UniformReservoir;
 import io.exp.riskcalc.RiskCalcHelperFactory;
 import io.exp.riskcalc.RiskCalcHelperInterface;
 import io.grpc.Server;
@@ -15,6 +17,8 @@ public class RiskServer {
     private static final Logger logger = LoggerFactory.getLogger(RiskServer.class);
     private Server server;
     private  static int PORT=9001;
+
+    private static Timer totalTimer = new Timer(new UniformReservoir());
 
     public static void main(String[] args) throws IOException, InterruptedException {
 

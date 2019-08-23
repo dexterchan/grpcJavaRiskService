@@ -1,5 +1,9 @@
 package io.exp.grpc.risk;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Slf4jReporter;
+import com.codahale.metrics.Timer;
+import com.codahale.metrics.UniformReservoir;
 import com.google.protobuf.util.JsonFormat;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -16,6 +20,9 @@ public class RiskClient {
 
     private final RiskServiceGrpc.RiskServiceBlockingStub blockingStub;
     private static int PORT=9001;
+
+    private static Timer totalTimer = new Timer(new UniformReservoir());
+    private static Timer grpcTimer = new Timer(new UniformReservoir());
 
     public RiskClient(String host, int port) {
         this(ManagedChannelBuilder.forAddress(host, port)
@@ -68,9 +75,11 @@ public class RiskClient {
         ValueResponse res=null;
 
         try{
-             res =
-                    blockingStub.calculate(req.build());
-            logger.info("Status:"+res.getStatus());
+            res=withTimer(grpcTimer, "grpc call", () -> {
+                return blockingStub.calculate(req.build());
+            });
+
+            logger.debug("Status:"+res.getStatus());
         }catch(StatusRuntimeException e) {
             logger.warn( "RPC failed: {0}", e.getStatus());
             throw  e;
@@ -79,6 +88,18 @@ public class RiskClient {
     }
 
     public static void main(String[] args) throws Exception {
+
+        final int numOfTime=10000;
+        MetricRegistry registry = new MetricRegistry();
+        registry.register("trigger calculate request", totalTimer);
+        registry.register("grpc request",grpcTimer);
+
+        Slf4jReporter reporter = Slf4jReporter.forRegistry(registry)
+                .outputTo(logger)
+                .convertRatesTo(TimeUnit.SECONDS)
+                .convertDurationsTo(TimeUnit.MILLISECONDS)
+                .build();
+        reporter.start(1, TimeUnit.SECONDS);
 
         if(args.length>0){
             PORT = Integer.parseInt(args[0]);
@@ -92,27 +113,57 @@ public class RiskClient {
                 return;
             }
 
+            for(int i=0;i<numOfTime;i++) {
 
-            ValueResponse res = client.calculateRisk("2017-03-01","12345","<Trade></Trade>");
-
-            //String jsonString = "";
-//            JsonFormat.parser().ignoringUnknownFields().merge(jsonString,res.toBuilder());
-            logger.info(res.getTradeId());
-            for (ValueResponse.AssetSensivity asset : res.getAssetSensitivityLstList()){
-                logger.info(asset.getAssetId()+":"+asset.getCcy()+":"+asset.getNpv());
-                for (ValueResponse.Sensitivity sens : asset.getSenseLstList()){
-                    logger.info(sens.getCcy()+":"+sens.getRiskLabel());
-                    for(ValueResponse.Sensitivity.Tenor t: sens.getTenorsList()){
-                        logger.info(t.getLabel()+","+t.getValue());
+                ValueResponse res =withTimer(totalTimer, "creationToRetrieval", () -> {
+                    return client.calculateRisk("2017-03-01", "12345", "<Trade></Trade>");
+                });
+                logger.debug(res.getTradeId());
+                for (ValueResponse.AssetSensivity asset : res.getAssetSensitivityLstList()) {
+                    logger.debug(asset.getAssetId() + ":" + asset.getCcy() + ":" + asset.getNpv());
+                    for (ValueResponse.Sensitivity sens : asset.getSenseLstList()) {
+                        logger.debug(sens.getCcy() + ":" + sens.getRiskLabel());
+                        for (ValueResponse.Sensitivity.Tenor t : sens.getTenorsList()) {
+                            logger.debug(t.getLabel() + "," + t.getValue());
+                        }
                     }
                 }
             }
+
+            //String jsonString = "";
+//            JsonFormat.parser().ignoringUnknownFields().merge(jsonString,res.toBuilder());
+
 
             //String JsonStr=JsonFormat.printer().print(res);
             //logger.info(JsonStr);
 
         } finally {
             client.shutdown();
+        }
+    }
+
+
+
+    @FunctionalInterface
+    public interface SupplierWithException<T> {
+        T get() throws Exception;
+    }
+
+    private static <T> T withTimer(Timer timer, String name, SupplierWithException<T> func) {
+
+        Timer.Context ctx = timer.time();
+        try {
+            T result = func.get();
+            return result;
+
+        } catch (RuntimeException e) {
+            throw e;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Wrapped exception - " + name + ": " + e.getMessage(), e);
+
+        } finally {
+            ctx.stop();
         }
     }
 }
