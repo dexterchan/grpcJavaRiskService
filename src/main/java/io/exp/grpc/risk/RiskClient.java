@@ -5,6 +5,7 @@ import com.codahale.metrics.Slf4jReporter;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.UniformReservoir;
 import com.google.protobuf.util.JsonFormat;
+import io.exp.grpc.risk.metric.SupplierWithException;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -12,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
+
+import static io.exp.grpc.risk.metric.SupplierWithException.withTimer;
 
 public class RiskClient {
     private static final Logger logger = LoggerFactory.getLogger(RiskClient.class);
@@ -115,7 +118,7 @@ public class RiskClient {
 
             for(int i=0;i<numOfTime;i++) {
 
-                ValueResponse res =withTimer(totalTimer, "creationToRetrieval", () -> {
+                ValueResponse res = SupplierWithException.withTimer(totalTimer, "creationToRetrieval", () -> {
                     return client.calculateRisk("2017-03-01", "12345", "<Trade></Trade>");
                 });
                 logger.debug(res.getTradeId());
@@ -142,28 +145,4 @@ public class RiskClient {
         }
     }
 
-
-
-    @FunctionalInterface
-    public interface SupplierWithException<T> {
-        T get() throws Exception;
-    }
-
-    private static <T> T withTimer(Timer timer, String name, SupplierWithException<T> func) {
-
-        Timer.Context ctx = timer.time();
-        try {
-            T result = func.get();
-            return result;
-
-        } catch (RuntimeException e) {
-            throw e;
-
-        } catch (Exception e) {
-            throw new RuntimeException("Wrapped exception - " + name + ": " + e.getMessage(), e);
-
-        } finally {
-            ctx.stop();
-        }
-    }
 }
