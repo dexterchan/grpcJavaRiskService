@@ -5,6 +5,7 @@ import com.codahale.metrics.Slf4jReporter;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.UniformReservoir;
 import com.google.protobuf.util.JsonFormat;
+import io.exp.grpc.risk.Service.PricingService;
 import io.exp.grpc.risk.metric.SupplierWithException;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -19,13 +20,15 @@ import static io.exp.grpc.risk.metric.SupplierWithException.withTimer;
 public class RiskClient {
     private static final Logger logger = LoggerFactory.getLogger(RiskClient.class);
 
-    private final ManagedChannel channel;
+    private  ManagedChannel channel;
 
-    private final RiskServiceGrpc.RiskServiceBlockingStub blockingStub;
+    private  RiskServiceGrpc.RiskServiceBlockingStub blockingStub=null;
     private static int PORT=9001;
 
     private static Timer totalTimer = new Timer(new UniformReservoir());
     private static Timer grpcTimer = new Timer(new UniformReservoir());
+
+    private PricingService pricingservice=null;
 
     public RiskClient(String host, int port) {
         this(ManagedChannelBuilder.forAddress(host, port)
@@ -35,10 +38,19 @@ public class RiskClient {
                 .build());
     }
 
+    public RiskClient(){
+        this.pricingservice=(request)->
+             blockingStub.calculate(request);
+    }
     /** Construct client for accessing HelloWorld server using the existing channel. */
     RiskClient(ManagedChannel channel) {
+        this();
         this.channel = channel;
         blockingStub = RiskServiceGrpc.newBlockingStub(channel);
+    }
+
+    public void setPricingservice(PricingService pricingservice) {
+        this.pricingservice = pricingservice;
     }
 
     public void shutdown() throws InterruptedException {
@@ -79,7 +91,7 @@ public class RiskClient {
 
         try{
             res=withTimer(grpcTimer, "grpc call", () -> {
-                return blockingStub.calculate(req.build());
+                return pricingservice.calculateRisk(req.build());//blockingStub.calculate(req.build());
             });
 
             logger.debug("Status:"+res.getStatus());
