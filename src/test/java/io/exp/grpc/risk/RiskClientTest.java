@@ -1,5 +1,6 @@
 package io.exp.grpc.risk;
 
+import com.google.protobuf.Timestamp;
 import io.exp.grpc.risk.Service.PricingService;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,7 +35,10 @@ public class RiskClientTest {
         String systemdate="2017-03-01";
         String trademsg = "<Trade></Trade>";
         req.setTradeId(mytradeid);
-        req.setSystemDate(systemdate);
+
+        long millis = System.currentTimeMillis();
+        Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000).setNanos((int) ((millis % 1000) * 1000000)).build();
+        req.setSystemDate(timestamp);
         req.setTradeMessage(trademsg);
         req.setOutputType(ValueRequest.OUTPUT.ALL);
         req.setRunType(ValueRequest.RUNTYPE.FO);
@@ -44,7 +48,7 @@ public class RiskClientTest {
                     ValueRequest v = (ValueRequest)(invocation.getArgument(0));
                     String tradeid = v.getTradeId();
                     ValueResponse.Builder replyBuilder = ValueResponse.newBuilder().setStatus(ValueResponse.Status.SUCCESS);
-                    replyBuilder.setTime(new Date().toString());
+                    replyBuilder.setTime(timestamp);
                     replyBuilder.setTradeId(tradeid);
 
                     //Fill in asset

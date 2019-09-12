@@ -1,5 +1,5 @@
 syntax = "proto3";
-//import "google/protobuf/timestamp.proto";
+import "google/protobuf/timestamp.proto";
 option java_multiple_files = true;
 option java_package = "io.exp.grpc.risk";
 option java_outer_classname = "RiskProto";
@@ -41,7 +41,7 @@ message ValueRequest{
         CUSTOM=3;
     }
 
-    string systemDate = 1;
+    google.protobuf.Timestamp systemDate = 1;
     string tradeId = 2 ;
     string tradeMessage = 3;
     OUTPUT outputType=4;
@@ -55,7 +55,7 @@ message ValueResponse{
         FAIL = 1;
     }
     Status status=1;
-    string time = 2;
+    google.protobuf.Timestamp time = 2;
     string tradeId=3;
 
 

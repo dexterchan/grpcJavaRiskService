@@ -1,6 +1,7 @@
 package io.exp.riskcalc;
 
 
+import com.google.protobuf.Timestamp;
 import io.exp.grpc.risk.ValueRequest;
 import io.exp.grpc.risk.ValueResponse;
 import org.slf4j.Logger;
@@ -19,12 +20,14 @@ public class FakeRiskCalcHelper implements RiskCalcHelperInterface {
     @Override
     public ValueResponse calculate(ValueRequest req) {
         String tradeid = req.getTradeId();
-        String date= req.getSystemDate();
+        Timestamp date= req.getSystemDate();
 
         String tradeMsg = req.getTradeMessage();
 
         ValueResponse.Builder replyBuilder = ValueResponse.newBuilder().setStatus(ValueResponse.Status.SUCCESS);
-        replyBuilder.setTime(new Date().toString());
+        long millis = System.currentTimeMillis();
+        Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000).setNanos((int) ((millis % 1000) * 1000000)).build();
+        replyBuilder.setTime(timestamp);
         replyBuilder.setTradeId(tradeid);
 
         //Fill in asset

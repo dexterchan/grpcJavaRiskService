@@ -4,6 +4,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Slf4jReporter;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.UniformReservoir;
+import com.google.protobuf.Timestamp;
 import com.google.protobuf.util.JsonFormat;
 import io.exp.grpc.risk.Service.PricingService;
 import io.exp.grpc.risk.metric.SupplierWithException;
@@ -82,7 +83,9 @@ public class RiskClient {
         logger.debug("trying to ping server");
         ValueRequest.Builder req = ValueRequest.newBuilder();
         req.setTradeId(tradeid);
-        req.setSystemDate(systemdate);
+        long millis = System.currentTimeMillis();
+        Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000).setNanos((int) ((millis % 1000) * 1000000)).build();
+        req.setSystemDate(timestamp);
         req.setTradeMessage(tradeMessage);
         req.setOutputType(ValueRequest.OUTPUT.ALL);
         req.setRunType(ValueRequest.RUNTYPE.FO);

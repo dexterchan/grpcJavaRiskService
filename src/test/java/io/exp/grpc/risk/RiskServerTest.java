@@ -1,5 +1,6 @@
 package io.exp.grpc.risk;
 
+import com.google.protobuf.Timestamp;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
@@ -8,6 +9,10 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -36,12 +41,33 @@ public class RiskServerTest {
     @Test
     public void riskImpl_replyMessage() throws Exception {
 
-        ValueRequest req = ValueRequest.newBuilder().setTradeId("12345").setSystemDate("2017-03-01").setTradeMessage("<Trade></Trade>").build();
+        int concurrency=10;
+        long millis = System.currentTimeMillis();
+        Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000).setNanos((int) ((millis % 1000) * 1000000)).build();
 
-        ValueResponse res =
-                blockingStub.calculate(req);
+        ExecutorService ex = Executors.newCachedThreadPool();
+        for (int i=0;i<concurrency;i++) {
+            ex.submit(
+                    () -> {
+                        ValueRequest req = ValueRequest.newBuilder().setTradeId("12345").setSystemDate(timestamp).setTradeMessage("<Trade></Trade>").build();
 
-        assertEquals(res.getTradeId(),req.getTradeId());
+                        ValueResponse res =
+                                blockingStub.calculate(req);
+
+                        assertEquals(res.getTradeId(), req.getTradeId());
+                    }
+            );
+        }
+
+        ex.shutdown();
+
+        try{
+            if (!ex.awaitTermination(60, TimeUnit.SECONDS)) {
+                ex.shutdownNow();
+            }
+        }catch(Exception exp){
+            ex.shutdownNow();
+        }
 
     }
 
